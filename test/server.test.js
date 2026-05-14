@@ -6,8 +6,10 @@ const path = require('node:path');
 
 const { createApp } = require('../server');
 
+const PACKAGE_NAME = 'mymockserver';
+
 function createTempDbPath() {
-  const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'mymockserver-test-'));
+  const directory = fs.mkdtempSync(path.join(os.tmpdir(), `${PACKAGE_NAME}-test-`));
   return {
     dbPath: path.join(directory, 'db.json'),
     directory,
