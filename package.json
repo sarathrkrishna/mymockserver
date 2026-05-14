@@ -1,0 +1,19 @@
+{
+  "name": "mymockserver",
+  "version": "1.0.0",
+  "description": "Simple LINE Messaging API push mock server",
+  "main": "server.js",
+  "scripts": {
+    "test": "node --test --test-concurrency=1",
+    "start": "node server.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^5.2.1"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
