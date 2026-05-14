@@ -7,7 +7,7 @@ const path = require('node:path');
 const { createApp } = require('../server');
 
 function createTempDbPath() {
-  const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'mymockserver-'));
+  const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'mymockserver-test-'));
   return path.join(directory, 'db.json');
 }
 

@@ -3,6 +3,7 @@ const fs = require('fs');
 const path = require('path');
 
 const DEFAULT_PORT = 3000;
+const MAX_LOGGED_BODY_LENGTH = 5000;
 const REDACTED_HEADERS = new Set([
   'authorization',
   'cookie',
@@ -71,8 +72,8 @@ function normalizeBody(bodyBuffer) {
 }
 
 function limitLoggedBody(body) {
-  if (typeof body === 'string' && body.length > 5000) {
-    return `${body.slice(0, 5000)}…[truncated]`;
+  if (typeof body === 'string' && body.length > MAX_LOGGED_BODY_LENGTH) {
+    return `${body.slice(0, MAX_LOGGED_BODY_LENGTH)}…[truncated]`;
   }
 
   return body;
