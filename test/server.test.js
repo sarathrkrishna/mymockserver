@@ -8,11 +8,14 @@ const { createApp } = require('../server');
 
 function createTempDbPath() {
   const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'mymockserver-test-'));
-  return path.join(directory, 'db.json');
+  return {
+    dbPath: path.join(directory, 'db.json'),
+    directory,
+  };
 }
 
 async function startServer() {
-  const dbPath = createTempDbPath();
+  const { dbPath, directory } = createTempDbPath();
   const app = createApp({ dbPath });
   const server = await new Promise((resolve) => {
     const instance = app.listen(0, () => resolve(instance));
@@ -20,12 +23,13 @@ async function startServer() {
 
   return {
     dbPath,
+    directory,
     server,
     baseUrl: `http://127.0.0.1:${server.address().port}`,
   };
 }
 
-async function stopServer(server) {
+async function stopServer(server, directory) {
   await new Promise((resolve, reject) => {
     server.close((error) => {
       if (error) {
@@ -36,10 +40,12 @@ async function stopServer(server) {
       resolve();
     });
   });
+
+  fs.rmSync(directory, { recursive: true, force: true });
 }
 
 test('GET /health returns ok', async () => {
-  const { server, baseUrl } = await startServer();
+  const { server, baseUrl, directory } = await startServer();
 
   try {
     const response = await fetch(`${baseUrl}/health`);
@@ -47,12 +53,12 @@ test('GET /health returns ok', async () => {
     assert.equal(response.status, 200);
     assert.deepEqual(await response.json(), { status: 'ok' });
   } finally {
-    await stopServer(server);
+    await stopServer(server, directory);
   }
 });
 
 test('POST /v2/bot/message/push deduplicates retry keys', async () => {
-  const { server, baseUrl, dbPath } = await startServer();
+  const { server, baseUrl, dbPath, directory } = await startServer();
 
   try {
     const firstResponse = await fetch(`${baseUrl}/v2/bot/message/push`, {
@@ -82,12 +88,12 @@ test('POST /v2/bot/message/push deduplicates retry keys', async () => {
     const db = JSON.parse(fs.readFileSync(dbPath, 'utf8'));
     assert.equal(typeof db.retryKeys['retry-123'], 'string');
   } finally {
-    await stopServer(server);
+    await stopServer(server, directory);
   }
 });
 
 test('POST /reset clears persisted retry keys', async () => {
-  const { server, baseUrl } = await startServer();
+  const { server, baseUrl, directory } = await startServer();
 
   try {
     await fetch(`${baseUrl}/v2/bot/message/push`, {
@@ -109,12 +115,12 @@ test('POST /reset clears persisted retry keys', async () => {
     const dbResponse = await fetch(`${baseUrl}/db`);
     assert.deepEqual(await dbResponse.json(), { retryKeys: {} });
   } finally {
-    await stopServer(server);
+    await stopServer(server, directory);
   }
 });
 
 test('mock configuration can force a status code with delay', async () => {
-  const { server, baseUrl } = await startServer();
+  const { server, baseUrl, directory } = await startServer();
   const originalForceStatus = process.env.MOCK_FORCE_STATUS;
   const originalDelay = process.env.MOCK_DELAY_MS;
 
@@ -148,6 +154,6 @@ test('mock configuration can force a status code with delay', async () => {
       process.env.MOCK_DELAY_MS = originalDelay;
     }
 
-    await stopServer(server);
+    await stopServer(server, directory);
   }
 });
